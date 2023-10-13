@@ -1,0 +1,4 @@
+
+- DONE: set up environment and install every tin
+- DONE: set up git
+- create the front-page

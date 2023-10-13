@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Chatty</title>
+    <!-- Include Bulma CSS framework -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.2/css/bulma.min.css">
+  </head>
+
+  <body>
+    <section class="section">
+      <div class="container">
+        <div class="columns is-multiline">
+          <div class="column is-6 is-offset-3 mb-6">
+            <section class="hero is-primary">
+              <div class="hero-body">
+                <p class="title">Chatty</p>
+                <p class="subtitle">Django chat app</p>
+              </div>
+            </section>
+          </div>
+
+          <div class="column is-6 is-offset-3">
+            <div class="box"> 
+                <div id="chat-messages"> </div>
+            </div>
+
+            <div class="field">
+              <div class="control">
+                <input class="input" type="text" placeholder="Enter Message" id="chat-message-input">
+              </div>
+            </div>
+
+           
+            <div class="field">
+              <div class="control">
+                <a class="button is-info" id="chat-message-submit">Submit</a>
+              </div>
+            </div>
+
+            <small class="has-text-grey-light"> Username: {{ username }} </small>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {{ room_name| json_script:"room-name"}}
+    {{ username | json_script:"username"}}
+    <script>
+      const room_name = document.getElementById("room-name").textContent
+      const username = document.getElementById("username").textContent
+
+      const chatsocket = new WebSocket(
+        "ws://"
+        + window.location.host
+        + "/ws/"
+        + room_name
+        + "/"
+      )
+
+      chatsocket.onopen = (event) => {
+        console.log("chat socket connected, ", event)
+      }
+      
+      function createMessageBubble(message, isUser) {
+        const bubble = document.createElement('div');
+        bubble.classList.add('message', isUser ? 'is-primary' : 'is-light');
+        bubble.innerHTML = `
+            <div class="message-body">
+                ${message}
+            </div>
+        `;
+        return bubble;
+    }
+    
+      chatsocket.onmessage = (event) => {
+        console.log("onmessage")
+        const data = JSON.parse(event.data);
+        is_myself = data.username === username;
+        const chat_div = document.querySelector("#chat-messages");
+
+        const message_bubble = createMessageBubble(
+          ('<b>' + data.username + '</b>:' + data.message + '<br>')
+        );
+        
+        chat_div.appendChild(message_bubble);
+      };
+
+      chatsocket.onclose = function(event){
+        console.log("Socket closed");
+      };
+
+      document.querySelector('#chat-message-input').onkeyup = function(e) {
+        if (e.key === 'Enter') {
+          document.querySelector('#chat-message-submit').click();
+        }
+      };
+
+      document.querySelector('#chat-message-submit').onclick = function(event){
+        const messageInput = document.querySelector('#chat-message-input')
+        chatsocket.send(JSON.stringify({
+          'message' : messageInput.value,
+          'username' : username,
+          'room_name' : room_name
+        }));
+
+        messageInput.value = ''
+        
+      };
+    </script>
+  </body>
+</html>
