@@ -49,16 +49,17 @@ class ChatGroupTextMessage(ConsumerMessage):
 
     @sync_to_async
     def get_message_in_db_count(cls, room_name):
-        print(int(models.Message.objects.filter(room__room_name=room_name).count()))
-        return 
-    
+        print(int(models.Message.objects.filter(
+            room__room_name=room_name).count()))
+        return
+
     @classmethod
     async def get_chat_messages(cls, room_name: str) -> 'AsyncIterable[ChatGroupTextMessage]':
         """A generator that yields all stored chat messages"""
-        message_dicts = await sync_to_async(cls.sync_message_getter)(cls, 
+        message_dicts = await sync_to_async(cls.sync_message_getter)(cls,
                                                                      room_name)
         msg_count = await cls.get_message_in_db_count(room_name)
-        
+
         for message_dict in message_dicts:
             user_message = ChatGroupTextMessage(
                 username=message_dict.get('username'),
